@@ -1,0 +1,96 @@
+//========================Gradle工程子模块依赖jar包及版本控制=========================
+//===========参数说明start=========
+//api: 依赖暴露，其他模块都可见
+//implementation: 表示依赖屏蔽，仅自己模块内可见
+//===========参数说明end===========
+
+
+
+//公共子模块依赖定义：app_common
+project(':app_common'){//app_common公共项目子模块: 作为jar工程供其他子模块引用，其他无须重复定义相关jar包
+	dependencies{
+		//依赖仓库jar包
+		api 'org.springframework.boot:spring-boot:2.4.3'
+		api 'org.springframework.boot:spring-boot-starter-web:2.4.3'
+		api 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.1.3'
+		api 'mysql:mysql-connector-java:5.1.47'
+
+		//依赖第三方jar包:指定工程资源lib目录下所有依赖包
+		api fileTree(dir:'src/main/resources/lib',includes: ['*.jar'])
+
+		//引入 mybatis-generator 插件
+		//apply plugin: "com.arenagod.gradle.MybatisGenerator"
+
+		//测试依赖：仅供测试用，仅当前模块生效，不会加载到打包版本中，PS: 根据实际需要定义
+		testImplementation 'junit:junit:4.11'
+	}
+}
+
+//独立子模块依赖定义: app_one
+project(':app_one'){
+	dependencies{
+		//模块依赖: 指定某个模块进行依赖
+		implementation project(':app_common')
+
+		//依赖第三方jar包：指定工程资源lib目录下所有依赖包
+	    compile fileTree(dir:'src/main/resources/lib',includes: ['*.jar'])
+
+		//依赖排除(包级别)：exclude的内容将不会被该jar包引用，PS: 根据实际需要定义
+		testImplementation (('org.springframework:spring-test:5.3.3')) {
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+		}
+
+		//依赖排除(模块级别)：exclude的内容将不会被该jar包引用，PS: 根据实际需要定义
+		implementation (project(':app_common')) {
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+		}
+
+		//测试依赖：仅供测试用，仅当前模块生效，不会加载到打包版本中，PS: 根据实际需要定义
+		testImplementation 'junit:junit:4.11'
+		testImplementation 'org.mybatis.generator:mybatis-generator-core:1.3.7'
+	}
+
+	//依赖排除(全局级别)：exclude的内容将不会被该jar包引用，PS: 当要排除的依赖范围很广时，可采用该方式
+	configurations.all {
+		exclude group: 'org.springframework', module: 'spring-core'
+	}
+}
+
+//独立子模块依赖定义: app_two
+project(':app_two'){
+	dependencies{
+		//模块依赖: 指定某个模块进行依赖
+		implementation project(':app_common')
+
+		//依赖第三方jar包：指定工程资源lib目录下所有依赖包
+		compile fileTree(dir:'src/main/resources/lib',includes: ['*.jar'])
+
+		//依赖排除(包级别)：exclude的内容将不会被该jar包引用，PS: 根据实际需要定义
+		testImplementation (('org.springframework:spring-test:5.3.3')) {
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+		}
+
+		//依赖排除(模块级别)：exclude的内容将不会被该jar包引用，PS: 根据实际需要定义
+		implementation (project(':app_common')) {
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+			exclude group: 'org.springframework', module: 'mock'
+		}
+
+		//测试依赖：仅供测试用，仅当前模块生效，不会加载到打包版本中，PS: 根据实际需要定义
+		testImplementation 'junit:junit:4.11'
+		testImplementation 'org.mybatis.generator:mybatis-generator-core:1.3.7'
+	}
+
+}
+

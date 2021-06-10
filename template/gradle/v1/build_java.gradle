@@ -1,0 +1,244 @@
+//bootJar,jar,war
+
+apply plugin: 'java'
+apply plugin: 'java-library'
+
+def project_path = project.getPath().replace(':','/')
+
+def src_dir = readRootProperty(project.name,'srcDir','src/main/java')
+def src_dir_file = file("$projectDir" + '/' + src_dir)
+
+println "src_dir_file====" + src_dir_file
+
+	if ( ! src_dir_file.exists() ){
+		src_dir = 'src'
+	}
+def package_type = readRootProperty(project.name,'packageType','jar')
+def compile_type = readRootProperty(project.name,'compileType','none')
+
+def generate_dependency_pkg = readRootProperty(project.name,'generateDependencyPkg','')
+
+//include othes project's srcDir
+def src_include_project_str = readRootProperty(project.name,'srcIncludeProject','')
+def src_include_projects = src_include_project_str.split(',')
+
+//package some static file from source dir
+def package_include_dirs_str = readRootProperty(project.name,'pkgIncludeDir','')
+
+def package_include_patterns = readRootProperty(project.name,'pkgIncludePatterns','')
+def package_exclude_patterns = readRootProperty(project.name,'pkgExcludePatterns','')
+
+package_exclude_patterns += ['**/*.java',"**/.gradle"]
+
+//flag
+def justin_config_dirs = []
+
+//flag dir tools
+def conver_dict = readRootProperty(project.name,'flagDict.converDict','0')
+def conver_errors = readRootProperty(project.name,'flagDict.converDict','0')
+def process_flag_dict='0'
+if (conver_dict == '1' || conver_errors == '1'){
+	process_flag_dict = '1'
+}
+
+//plugin: adp
+def adp_on = readRootProperty(project.name,'adp.on','0')
+def adp2_on = readRootProperty(project.name,'adp2.on','0')
+
+//java version
+def java_home = readRootProperty(project.name,'javaHome','')
+def java_target_version = readRootProperty(project.name,'javaTargetVersion','1.7')
+
+def env_java_home = System.getenv('JAVA_HOME') ?: System.getProperty('java.home')
+println "[" + project.name + "] Environment default JAVA_HOME: " + env_java_home
+
+//GAV
+def group_id = readGroupId(project.name)
+def artifact_id = readArtifactId(project.name)
+version = readAppVersion()
+
+//sub-dirs of output-dir
+def project_deploy_dir = getProjectOutputPath(output_dir,project) + '/_deploy'
+def project_dest_dir = getProjectOutputPath(output_dir,project) + '/_test'
+
+project.buildDir = project_dest_dir
+
+
+repositories {
+	maven {
+		url maven_public_repo_url
+	}
+}
+
+project.defaultTasks 'none'
+
+task none { }
+
+//
+if (package_type == 'jar') {
+//	apply plugin: 'java'
+//	apply plugin: 'java-library'
+
+	autobuild.dependsOn jar
+
+	def manifest_file = "${projectDir}/META-INF/MANIFEST.MF"
+
+	jar {
+		//baseName = artifact_id
+		archiveBaseName = artifact_id
+
+		//destinationDir = file(project_deploy_dir)
+		destinationDirectory = file(project_deploy_dir)
+		//gradle7+
+		//archiveDestinationDirectory = file(project_deploy_dir)
+
+		manifest {
+			attributes("Implementation-Version": archiveVersion)
+			if (file(manifest_file).exists()) {
+				println "[" + project.name + "] Import MANIFEST.MF from " + manifest_file
+				from([manifest_file])
+			}
+		}
+	}
+	jar.dependsOn compileJava
+}
+
+if( package_type == 'bootJar' ){
+//	apply plugin: 'java'
+//	apply plugin: 'java-library'
+	apply plugin: 'org.springframework.boot'
+
+	def start_class = readRootProperty(project.name,"bootStartClass",'')
+
+	//jar can enabled here (jar is disable by bootJar)
+	jar {
+		//enabled = true
+	}
+
+	bootJar{
+		//baseName = artifact_id
+		archiveBaseName = artifact_id
+
+		//version = version
+		archiveVersion = readAppVersion()
+
+		//classifier = 'boot'
+		archiveClassifier = 'boot'
+
+		//destinationDir = file(project_deploy_dir)
+		destinationDirectory = file(project_deploy_dir)
+		//gradle7+
+		//archiveDestinationDirectory = file(project_deploy_dir)
+
+		//mainClassName = start_class
+		mainClass = start_class
+
+		manifest{
+			//attributes("Start-Class": start_class,"Implementation-Version": version)
+			//gradle7+
+			attributes(
+				"Start-Class": start_class,
+				"Implementation-Version": archiveVersion
+			)
+		}
+		rootSpec.exclude('*.pom')
+	}
+
+	autobuild.dependsOn bootJar
+}
+
+//
+if( package_type == 'bootWar' ){
+//	apply plugin: 'java'
+//	apply plugin: 'java-library'
+	apply plugin: 'war'
+	apply plugin: 'org.springframework.boot'
+
+	def start_class = readRootProperty(project.name,"bootStartClass",'')
+
+	bootWar{
+		//baseName = artifact_id
+		archiveBaseName = artifact_id
+
+		//version = version
+		archiveVersion = version
+
+		//classifier = 'boot'
+		archiveClassifier = 'boot'
+
+		//destinationDir = file(project_deploy_dir)
+		destinationDirectory = file(project_deploy_dir)
+		//gradle7+
+		//archiveDestinationDirectory = file(project_deploy_dir)
+
+		mainClassName = start_class
+		manifest{
+			attributes("Start-Class": start_class,"Implementation-Version": version)
+		}
+		rootSpec.exclude('*.pom')
+	}
+
+	autobuild.dependsOn bootWar
+}
+
+//
+if( package_type == 'war' ){
+	apply plugin: 'war'
+	war {
+		//baseName = artifact_id
+		archiveBaseName = artifact_id
+
+		//version = readAppVersion()
+		archiveVersion = readAppVersion()
+
+		//destinationDir = file(project_deploy_dir)
+		destinationDirectory = file(project_deploy_dir)
+		//gradle7+
+		//archiveDestinationDirectory = file(project_deploy_dir)
+		manifest {
+			//attributes("Implementation-Version": version)
+			//gradle7+
+			attributes("Implementation-Version": archiveVersion)
+		}
+		from ('WebContent') {
+			exclude "META-INF/**"
+			exclude "WEB-INF/classes/**"
+			exclude "WEB-INF/lib/**"
+			exclude "**/**.jar"
+			exclude "**/**.class"
+		}
+
+		package_include_patterns.each {
+			exclude it
+		}
+	}
+
+	autobuild.dependsOn war
+	war.dependsOn compileJava
+}
+
+//generate java dependency package
+if( ( package_type == 'none' || package_type == 'jar') && ( generate_dependency_pkg == 'Y' ) ){
+	task zipDependencyJar(type: Zip){
+		dependsOn configurations.runtimeClasspath
+		//classifier = 'dep'
+		archiveClassifier = 'dep'
+
+		//destinationDir = file(project_deploy_dir)
+		destinationDirectory = file(project_deploy_dir)
+		//gradle7+
+		//archiveDestinationDirectory = file(project_deploy_dir)
+
+		//baseName = artifact_id
+		archiveBaseName = artifact_id
+
+		from {
+			configurations.runtimeClasspath.findAll {
+				it.name.endsWith('jar')
+			}
+		}
+	}
+
+	zipDependencyJar.dependsOn clean
+	autobuild.dependsOn zipDependencyJar
+}

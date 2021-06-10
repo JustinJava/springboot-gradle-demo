@@ -1,0 +1,131 @@
+//task entrance of all projects
+allprojects{
+	task autobuild{
+		//Eclipse BuildShip
+		group = 'build'
+		description = 'CI autobuild task'
+	}
+}
+//functions
+configure (project.rootProject){
+	ext{
+		//blank,"",null
+		isStrEmpty = { str ->
+			return ! (str?.trim())
+		}
+
+		//Read a global string value from root properties, with default value
+		readGlobalProperty = { key,default_value ->
+			String value = rootProject.properties[key]
+			if (value == null){
+				value = default_value
+			}
+			return  value
+		}
+
+		//Read a PROJECT string value from root properties, with default section or value
+		readRootProperty = { section,key,default_value ->
+			String value = rootProject.properties[section+'.'+key]
+			if(value == null){
+				value = rootProject.properties['default.'+key]
+			}
+			if(value == null){
+				value = default_value
+			}
+			return value
+		}
+
+		//GAV
+		//String readGroupId(project_name)
+		readGroupId = { project_name ->
+			def group_id = readRootProperty(project_name,'groudId','')
+			if (group_id == null){
+				throw new InvalidUserDataException("Cannot get: groupId")
+			}
+			return group_id
+		}
+
+		//artifactId
+		readArtifactId = { project_name ->
+			def artifactId = rootProject.properties[project_name+'.artifactId']
+			if (artifactId == null || artifactId == ''){
+				artifactId = project_name
+			}
+			return artifactId
+		}
+
+		//app_version
+		readAppVersion = { project_name ->
+			def app_version = rootProject.properties['default.appVersion']
+			if (app_version == null || app_version == ''){
+				app_version = "00.00.00"
+			}
+			return app_version
+		}
+
+		//output dir of the project
+		getProjectOutputPath = { output_dir,the_project ->
+			def build_engine = readGlobalProperty('build_engine','')
+			def project_path = the_project.getPath().replace(':','/')
+			def project_output_dir
+
+			if (build_engine != ''){ //CI mode
+				if (the_project.path == ':'){
+					project_output_dir = output_dir
+				}else{
+					project_output_dir = output_dir + project_path
+				}
+			}else{//developers mode
+				project_output_dir = the_project.projectDir.absolutePath + '/' + readGlobalProperty('output_dir','build')
+			}
+			return project_output_dir
+		}
+
+		//deploy package dir of the project (sub-dir of output-dir)
+		setSysPrivateRepo = { sys_id ->
+			allprojects{
+				repositories{
+					maven {
+						url maven_private_dev_repo_url
+						content { includeGroupByRegx "com\\.justin\\."+sys_id+".*" }
+					}
+				}
+			}
+		}
+
+
+		//private SNAPSHOT dependencies. DEV phase only!
+		setSysSnapshotsRepo = { sys_id ->
+			allprojects{
+				repositories{
+					maven {
+						url maven_snapshots_dev_repo_url
+						content { includeGroupByRegx "com\\.justin\\."+sys_id+".*" }
+					}
+				}
+			}
+		}
+
+		setFakeFlag = { the_project ->
+			the_project.ext {
+				fakeLinfo = ''
+			}
+		}
+
+		//optional function to improve build speed in developer's IDE
+		disableAllCleanTask = {
+			allprojects{
+				tasks.matching { it.name == 'clean' }.all { Task task ->
+					task.enabled = false
+				}
+			}
+		}
+	}
+}
+
+//project init
+allprojects {
+	//
+	project.buildDir = getProjectOutputPath(output_dir,project) + '/_dest'
+}
+

@@ -1,0 +1,90 @@
+//==================定制化1：仓库、编译、插件、公共依赖start==================
+buildscript {
+	//全局声明变量
+	ext {
+		//maven公共仓库
+		maven_public_repo_url="https://maven.aliyun.com/repository/public/"
+
+		//gradle插件中心
+		gradle_repo_url="https://plugins.gradle.org/m2/"
+
+		//maven应用系统私有仓库
+		//maven_private_dev_repo_url="https://maven.aliyun.com/repository/spring/"
+
+		//DEV SNAPSHOTS依赖仓库
+		//maven_snapshots_dev_repo_url="https://oss.sonatype.org/content/repositories/snapshots/"
+
+		//插件目录(放在工程目录下，也可以单独存放到资源服务器，指定访问文件的具体url)
+		template_dir="/template/gradle/v1"
+
+		//编译目录（相对路径）
+		output_dir="build"
+	}
+
+	//全局仓库: 自上而下寻找依赖
+	repositories {
+		//maven本地仓库: 优先加载
+		mavenLocal()
+
+		//maven仓库中心
+		mavenCentral()
+
+		//jcenter仓库中心
+		//jcenter()和mavenCentral()是两个独立的仓库，两者毫无关系，jcenter()有的mavenCentral()可能没有，反之亦然。
+		jcenter()
+
+		//google仓库中心
+		//google()
+
+		//maven远程仓库: 阿里云或公司私服仓库
+		maven {
+			url = maven_public_repo_url
+			url = gradle_repo_url
+			//url = maven_private_dev_repo_url
+			//url = maven_snapshots_dev_repo_url
+		}
+	}
+
+	//全局公共依赖
+	apply from: template_dir+'/buildscript.gradle',to: buildscript
+}
+//==================定制化1：仓库、编译、插件、公共依赖end==================
+
+//Java插件: 未配置时api、implementation无法加载
+plugins {
+	id 'java'
+	id 'java-library'
+}
+
+//==================定制化2：配置构建主入口、全局功能函数start==================
+//自定义全局工具定制化: 自动构建主入口+配置全局功能函数
+apply from: template_dir+'/functions.gradle'
+//==================定制化2：配置构建主入口、全局功能函数end==================
+
+
+//=======================定制化3：gradle子项目模块start=========================
+//common project
+project(':app_common'){
+	apply from: '..'+template_dir+'/build_java.gradle'
+	apply from: '..'+template_dir+'/junit.gradle'
+}
+
+//app_one project
+project(':app_one'){
+	apply from: '..'+template_dir+'/build_java.gradle'
+	apply from: '..'+template_dir+'/junit.gradle'
+}
+
+//app_two project
+project(':app_two'){
+	apply from: '..'+template_dir+'/build_java.gradle'
+	apply from: '..'+template_dir+'/junit.gradle'
+}
+//=======================定制化3：gradle子项目模块end=========================
+
+//=======================定制化4：子项目定义依赖start=========================
+apply from: 'dependencies.gradle'
+//=======================定制化4：子项目定义依赖end=========================
+//setSysSnapshotsRepo
+//待扩展...
+

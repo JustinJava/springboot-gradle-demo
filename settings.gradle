@@ -1,0 +1,5 @@
+//Gradle主工程名
+rootProject.name = 'springboot-gradle-demo'
+
+//Gradle子模块名
+include 'app_common','app_one','app_two'

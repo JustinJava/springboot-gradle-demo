@@ -1,0 +1,45 @@
+//java_version
+def java_home = readRootProperty(project.name,'javaHome','')
+
+def test_src_dir = readRootProperty(project.name,'testSrcDir','src/test/java')
+def test_src_dirs = test_src_dir.split(',')
+
+def test_res_dir = readRootProperty(project.name,'testResourcesDir','src/test/resources')
+def test_res_dirs = test_res_dir.split(',')
+
+apply plugin: 'java-library'
+
+//replace default srcDirs settings
+sourceSets.test.java.srcDirs = []
+test_src_dirs.each {
+    sourceSets.test.java.srcDirs it
+}
+
+sourceSets.test.resources.srcDirs = []
+test_res_dirs.each {
+    sourceSets.test.resources.srcDirs it
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+    options.fork = true
+    if ( java_home != '' ){
+        options.forkOptions.javaHome  = file(java_home)
+    }
+}
+
+test{
+    ignoreFailures = true
+    println getPath()
+    useJUnit()
+    reports.html.enabled = true
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test:"+ descriptor)
+    }
+
+    println "[" + project.name + '][test.java.srcDirs]' + sourceSets.test.java.srcDirs
+    println "[" + project.name + '][test.resources.srcDirs]' + sourceSets.test.resources.srcDirs
+}
+
+test.dependsOn compileTestJava
+autobuild.dependsOn test
