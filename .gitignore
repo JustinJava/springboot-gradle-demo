@@ -1,8 +1,32 @@
-# Created by .ignore support plugin (hsz.mobi)
 .gitignore
+#README.md
+
+### app ###
+build/
+target/
+bin/
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Gradle ###
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.classpath
+.project
+.settings/
 
 # Operating System Files
-
 *.DS_Store
 Thumbs.db
 *.sw?
@@ -11,23 +35,14 @@ Thumbs.db
 *~
 *.sublime-*
 
-# Build Artifacts
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
 
-.gradle/
-build/
-target/
-bin/
-dependency-reduced-pom.xml
+### VS Code ###
+.vscode/
 
-# Eclipse Project Files
 
-.classpath
-.project
-.settings/
-
-# IntelliJ IDEA Files
-
-*.iml
-*.ipr
-*.iws
-*.idea
